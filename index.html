@@ -100,12 +100,12 @@
 
 			for(var j = -50; j < 50; j++) {
 				for(var i = -50; i < 50; i++) {
-					vertexPositions.push([100 * i, 100 * j, 0]);
-					vertexPositions.push([100 * i + 100, 100 * j, 0]);
-					vertexPositions.push([100 * i + 100, 100 * j + 100, 0]);
-					vertexPositions.push([100 * i, 100 * j, 0]);
-					vertexPositions.push([100 * i + 100, 100 * j + 100, 0]);
-					vertexPositions.push([100 * i, 100 * j + 100, 0]);
+					vertexPositions.push([100 * i, 100 * j, 50 * Math.sin(100 * i)]); // BL
+					vertexPositions.push([100 * i + 100, 100 * j, 50 * Math.sin(100 * i + 100)]); // BR
+					vertexPositions.push([100 * i + 100, 100 * j + 100, 50 * Math.sin(100 * i + 100)]); // TR
+					vertexPositions.push([100 * i, 100 * j, 50 * Math.sin(100 * i)]); // BL
+					vertexPositions.push([100 * i + 100, 100 * j + 100, 50 * Math.sin(100 * i + 100)]); // TR
+					vertexPositions.push([100 * i, 100 * j + 100, 50 * Math.sin(100 * i)]); // TL
 				}
 				
 			}
@@ -194,7 +194,12 @@
 		}
 
 		//
-		
+		function update(vertexPositions) {
+			for(var i = 0; i < vertexPositions.length; i += 6) {
+				//vertexPositions[i][2] = 
+			}
+		}
+
 		function animate() {
 
 			requestAnimationFrame( animate );
