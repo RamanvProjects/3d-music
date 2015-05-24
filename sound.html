@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href='http://fonts.googleapis.com/css?family=Roboto|Open+Sans' rel='stylesheet' type='text/css'>
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        font-size: 48px;
+      }
+    </style>
+<title>SOUND JS</title>
+<script src="js/riffwave.js"></script>
+<script src="js/jquery-1.11.3.js"></script>
+</head>
+<body>
+<div> SOUND JS </div>
+<script type="text/javascript">
+	var data = [];
+	var index = 0;
+	function simHertz(data, play) {
+	    // var tone = new Audio();
+	    // var wave = new RIFFWAVE();
+	    // wave.header.sampleRate = 1000;
+	    // wave.Make(data);
+	    // tone.src = wave.dataURI;
+	    // play(tone);
+	}
+
+	// Updates the mouse location in real time 
+	currentMousePos = {
+		x : 0,
+		y : 0
+	};
+	$(document).mousemove(function(event) {
+        currentMousePos.x = event.pageX;
+        currentMousePos.y = event.pageY;
+    });
+
+	$(document).ready( function() {
+		setInterval(function () {
+			data.push(Math.round(128 + 127 * (Math.sin(index * 2 * Math.PI * Math.round(20 * currentMousePos.x/100) / 1000)));
+			
+
+
+
+			// data[index] = Math.round(128 + 127 * (Math.sin(index * 2 * Math.PI * Math.round(20 * currentMousePos.x/100) / 1000)));
+			// index++;
+			// console.log(data);
+			// if (data.length > 1000) {
+			// 	console.log("here");
+			// 	var currData = data.slice();
+			// 	console.log(currData.length);
+			// 	var wave = new RIFFWAVE(currData); // create the wave file
+			// 	var audio = new Audio(wave.dataURI); // create the HTML5 audio element
+			// 	audio.play(); 
+			// 	data = []; 
+			// 	index = 0; 
+			// };
+		}, 1);
+	});
+ //    var data = []; // just an array
+	// for (var i=0; i<10000; i++) data[i] = 30 * Math.sin(440 * 2 * Math.pi * (current)); // fill data with random samples
+	// var wave = new RIFFWAVE(data); // create the wave file
+	// var audio = new Audio(wave.dataURI); // create the HTML5 audio element
+	// audio.play(); // some noise
+</script>
+</body>
+</html>

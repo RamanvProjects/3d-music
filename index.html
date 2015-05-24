@@ -1,0 +1,64 @@
+<html>
+	<head>
+		<title>My first Three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.min.js"></script>
+<script>
+      // revolutions per second
+      var angularSpeed = 0; 
+      var lastTime = 0;
+ 
+      // this function is executed on each animation frame
+      function animate(){
+        // update
+        var time = (new Date()).getTime();
+        var timeDiff = time - lastTime;
+        var angleChange = angularSpeed * timeDiff * 2 * Math.PI / 1000;
+        plane.rotation.z += angleChange;
+        lastTime = time;
+ 
+        // render
+        controls.update( clock.getDelta() );
+        renderer.render(scene, camera);
+ 
+        // request new frame
+        requestAnimationFrame(function(){
+            animate();
+        });
+      }
+
+      // renderer
+      var renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // camera
+      var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.y = -450;
+      camera.position.z = 400;
+      camera.rotation.x = 45 * (Math.PI / 180);
+ 	var controls = new THREE.FirstPersonControls( camera );
+				controls.movementSpeed = 150;
+				controls.lookSpeed = 0.1;
+      // scene
+      var scene = new THREE.Scene();
+ 	  scene.fog = new THREE.FogExp2( 0xefd1b5, 0.0025 )
+      // plane
+      var plane = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshNormalMaterial());
+      plane.wireframe = true;
+      plane.wireframeLinewidth = 3;
+      plane.overdraw = true;
+      scene.add(plane);
+      // start animation
+      animate();
+
+
+
+</script>
+	</body>
+</html>
