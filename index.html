@@ -38,7 +38,9 @@
 			filterparam: 1
 		}
 		
-		var waterNormals;
+		var waterNormals,
+			waterGeo,
+			zVals = [];
 
 		init();
 		animate();
@@ -55,12 +57,12 @@
 
 			scene = new THREE.Scene();
 			camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.5, 3000000 );
-			camera.position.set( 2000, 750, 2000 );
+			camera.position.set( 200, 750, 2000 );
 
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.userPan = true;
 			controls.userPanSpeed = 1.0;
-			controls.maxDistance = 50000.0;
+			controls.maxDistance = 500000.0;
 			controls.maxPolarAngle = Math.PI * 0.495;
 			controls.center.set( 0, 500, 0 );
 
@@ -93,32 +95,29 @@
 			// scene.add( mirrorMesh );
 
 
-			var geometry = new THREE.BufferGeometry();
+			waterGeo = new THREE.BufferGeometry();
 			// create a simple square shape. We duplicate the top left and bottom right
 			// vertices because each vertex needs to appear once per triangle. 
 			var vertexPositions = [];
 
-			for(var j = -50; j < 50; j++) {
-				for(var i = -50; i < 50; i++) {
-					vertexPositions.push([100 * i, 100 * j, 50 * Math.sin(100 * i)]); // BL
-					vertexPositions.push([100 * i + 100, 100 * j, 50 * Math.sin(100 * i + 100)]); // BR
-					vertexPositions.push([100 * i + 100, 100 * j + 100, 50 * Math.sin(100 * i + 100)]); // TR
-					vertexPositions.push([100 * i, 100 * j, 50 * Math.sin(100 * i)]); // BL
-					vertexPositions.push([100 * i + 100, 100 * j + 100, 50 * Math.sin(100 * i + 100)]); // TR
-					vertexPositions.push([100 * i, 100 * j + 100, 50 * Math.sin(100 * i)]); // TL
+			for(var j = 0; j < 100; j++) {
+				zVals[j] = [];
+				for(var i = 0; i < 100; i++) {
+					var BL = 500 * (Math.sin(1000 * i) + Math.cos(1000 * j));
+					var BR = 500 * (Math.sin(1000 * i + 1000) + Math.cos(1000 * j));
+					var TR = 500 * (Math.sin(1000 * i + 1000) + Math.cos(1000 * j + 1000));
+					var TL = 500 * (Math.sin(1000 * i) + Math.cos(1000 * j + 1000));
+
+					vertexPositions.push([1000 * i, 1000 * j, BL]); // BL
+					vertexPositions.push([1000 * i + 1000, 1000 * j, BR]); // BR
+					vertexPositions.push([1000 * i + 1000, 1000 * j + 1000, TR]); // TR
+					vertexPositions.push([1000 * i, 1000 * j, BL]); // BL
+					vertexPositions.push([1000 * i + 1000, 1000 * j + 1000, TR]); // TR
+					vertexPositions.push([1000 * i, 1000 * j + 1000, TL]); // TL
+
+					zVals[j].push(BL);
 				}
-				
 			}
-	
-			// vertexPositions.push([0, 0, 0]);
-			// vertexPositions.push([100, 0, 0]);
-			// vertexPositions.push([100, 100, 0]);
-			vertexPositions.push([0, 0, 0]);
-			vertexPositions.push([100, 100, 0]);
-			vertexPositions.push([0, 100, 0]);
-
-
-
 			var vertices = new Float32Array( vertexPositions.length * 3 ); // three components per vertex
 
 			// components of the position vector for each vertex are stored
@@ -131,8 +130,10 @@
 			}
 
 			// itemSize = 3 because there are 3 values (components) per vertex
-			geometry.addAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
-			var mesh = new THREE.Mesh( geometry, water.material );
+			var bufferAttr = new THREE.BufferAttribute( vertices, 3 );
+			bufferAttr.needsUpdate = true;
+			waterGeo.addAttribute( 'position', bufferAttr);
+			var mesh = new THREE.Mesh( waterGeo, water.material );
 			mesh.add( water );
 			mesh.rotation.x = - Math.PI * 0.5;
 			scene.add(mesh)
@@ -190,13 +191,26 @@
 				skyBoxMaterial
 			);
 			
-			scene.add( skyBox );
+			scene.add(skyBox);
 		}
 
-		//
-		function update(vertexPositions) {
-			for(var i = 0; i < vertexPositions.length; i += 6) {
-				//vertexPositions[i][2] = 
+		function updateSinAmp(pt, amp, arr) {
+			if(!(pt[0] < 0 || pt[1] < 0 || pt[0] > 999 || pt[1] > 999 
+				|| amp <= 10 || arr.indexOf(pt) > -1)) {
+				var bufferAttr = waterGeo.getAttribute('position');
+				bufferAttr.needsUpdate = true;
+				for(var i = 0; i < bufferAttr.array.length; i += 3) {
+					if(bufferAttr.array[i] == pt[0] * 100 && bufferAttr.array[i + 1] == pt[1] * 100) {
+						bufferAttr.array[i + 2] = amp;
+					}
+				}
+				arr.push(pt);
+				console.log(amp);
+				delay(10);
+ 				updateSinAmp([pt[0] + 1, pt[1]], amp * .9, arr);
+ 				// updateSinAmp([pt[0], pt[1] + 1], amp * .9, arr);
+ 				// updateSinAmp([pt[0] - 1, pt[1]], amp * .9, arr);
+ 				// updateSinAmp([pt[0], pt[1] - 1], amp * .9, arr);
 			}
 		}
 
@@ -210,13 +224,14 @@
 		function render() {
 
 			var time = performance.now() * 0.001;
-
-			// water.material.uniforms.time.value += 1.0 / 6.0;
+			water.material.uniforms.time.value += 1.0 / 60;
 			controls.update();
 			water.render();
 			renderer.render( scene, camera );
 
 		}
+		
+		updateSinAmp([50, 50], 1000, []);
 	</script>
 </body>
 </html>
