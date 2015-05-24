@@ -96,15 +96,29 @@
 			var geometry = new THREE.BufferGeometry();
 			// create a simple square shape. We duplicate the top left and bottom right
 			// vertices because each vertex needs to appear once per triangle. 
-			var vertexPositions = [ 
-				[-1000, -1000,  1000],
-				[ 1000, -1000,  1000],
-				[ 1000,  1000,  1000],
+			var vertexPositions = [];
 
-				[ 1000,  1000,  1000],
-				[-1000,  1000,  1000],
-				[-1000, -1000,  1000]
-			];
+			for(var j = -50; j < 50; j++) {
+				for(var i = -50; i < 50; i++) {
+					vertexPositions.push([100 * i, 100 * j, 0]);
+					vertexPositions.push([100 * i + 100, 100 * j, 0]);
+					vertexPositions.push([100 * i + 100, 100 * j + 100, 0]);
+					vertexPositions.push([100 * i, 100 * j, 0]);
+					vertexPositions.push([100 * i + 100, 100 * j + 100, 0]);
+					vertexPositions.push([100 * i, 100 * j + 100, 0]);
+				}
+				
+			}
+	
+			// vertexPositions.push([0, 0, 0]);
+			// vertexPositions.push([100, 0, 0]);
+			// vertexPositions.push([100, 100, 0]);
+			vertexPositions.push([0, 0, 0]);
+			vertexPositions.push([100, 100, 0]);
+			vertexPositions.push([0, 100, 0]);
+
+
+
 			var vertices = new Float32Array( vertexPositions.length * 3 ); // three components per vertex
 
 			// components of the position vector for each vertex are stored
@@ -180,7 +194,7 @@
 		}
 
 		//
-
+		
 		function animate() {
 
 			requestAnimationFrame( animate );
