@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Learning Three JS</title>
+	<style>
+		body { margin: 0; }
+		canvas { width: 100%; height: 100% }
+	</style>	
+	<script src="js/three.min.js"></script>
+	<script src="libs/js/controls/OrbitControls.js"></script>
+	<script src="libs/js/Mirror.js"></script>
+	<script src="libs/js/WaterShader.js"></script>
+
+	<script src="libs/js/Detector.js"></script>
+	<script src="libs/js/libs/stats.min.js"></script>
+</head>
+<body>
+	<script>
+
+		if ( ! Detector.webgl ) {
+
+			Detector.addGetWebGLMessage();
+			document.getElementById( 'container' ).innerHTML = "";
+
+		}
+
+		var container, stats;
+		var camera, scene, renderer;
+		var sphere;
+
+		var parameters = {
+			width: 2000,
+			height: 2000,
+			widthSegments: 250,
+			heightSegments: 250,
+			depth: 1500,
+			param: 4,
+			filterparam: 1
+		}
+		
+		var waterNormals,
+			waterGeo,
+			zVals = [];
+
+		init();
+		animate();
+
+		function init() {
+
+			container = document.createElement( 'div' );
+			document.body.appendChild( container );
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			container.appendChild( renderer.domElement );
+
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.5, 3000000 );
+			camera.position.set( 200, 750, 2000 );
+
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
+			controls.userPan = true;
+			controls.userPanSpeed = 1.0;
+			controls.maxDistance = 500000.0;
+			controls.maxPolarAngle = Math.PI * 0.495;
+			controls.center.set( 0, 500, 0 );
+
+			var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+			light.position.set( - 1, 1, - 1 );
+			scene.add( light );
+
+			waterNormals = new THREE.ImageUtils.loadTexture( 'assets/textures/waternormals.jpg' );
+			waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping; 
+
+			water = new THREE.Water( renderer, camera, scene, {
+				textureWidth: 512, 
+				textureHeight: 512,
+				waterNormals: waterNormals,
+				alpha: 	1.0,
+				sunDirection: light.position.clone().normalize(),
+				sunColor: 0xffffff,
+				waterColor: 0x001e0f,
+				distortionScale: 50.0,
+			} );
+
+
+			// mirrorMesh = new THREE.Mesh(
+			// 	new THREE.PlaneBufferGeometry( parameters.width * 500, parameters.height * 500 ),
+			// 	water.material
+			// );
+
+			// mirrorMesh.add( water );
+			// mirrorMesh.rotation.x = - Math.PI * 0.5;
+			// scene.add( mirrorMesh );
+
+
+			waterGeo = new THREE.BufferGeometry();
+			// create a simple square shape. We duplicate the top left and bottom right
+			// vertices because each vertex needs to appear once per triangle. 
+			var vertexPositions = [];
+
+			for(var j = 0; j < 100; j++) {
+				zVals[j] = [];
+				for(var i = 0; i < 100; i++) {
+					var BL = 500 * (Math.sin(1000 * i) + Math.cos(1000 * j));
+					var BR = 500 * (Math.sin(1000 * i + 1000) + Math.cos(1000 * j));
+					var TR = 500 * (Math.sin(1000 * i + 1000) + Math.cos(1000 * j + 1000));
+					var TL = 500 * (Math.sin(1000 * i) + Math.cos(1000 * j + 1000));
+
+					vertexPositions.push([1000 * i, 1000 * j, BL]); // BL
+					vertexPositions.push([1000 * i + 1000, 1000 * j, BR]); // BR
+					vertexPositions.push([1000 * i + 1000, 1000 * j + 1000, TR]); // TR
+					vertexPositions.push([1000 * i, 1000 * j, BL]); // BL
+					vertexPositions.push([1000 * i + 1000, 1000 * j + 1000, TR]); // TR
+					vertexPositions.push([1000 * i, 1000 * j + 1000, TL]); // TL
+
+					zVals[j].push(BL);
+				}
+			}
+			var vertices = new Float32Array( vertexPositions.length * 3 ); // three components per vertex
+
+			// components of the position vector for each vertex are stored
+			// contiguously in the buffer.
+			for ( var i = 0; i < vertexPositions.length; i++ )
+			{
+				vertices[ i*3 + 0 ] = vertexPositions[i][0];
+				vertices[ i*3 + 1 ] = vertexPositions[i][1];
+				vertices[ i*3 + 2 ] = vertexPositions[i][2];
+			}
+
+			// itemSize = 3 because there are 3 values (components) per vertex
+			var bufferAttr = new THREE.BufferAttribute( vertices, 3 );
+			bufferAttr.needsUpdate = true;
+			waterGeo.addAttribute( 'position', bufferAttr);
+			var mesh = new THREE.Mesh( waterGeo, water.material );
+			mesh.add( water );
+			mesh.rotation.x = - Math.PI * 0.5;
+			scene.add(mesh)
+			
+			
+
+
+			// load skybox
+
+			var cubeMap = new THREE.CubeTexture( [] );
+			cubeMap.format = THREE.RGBFormat;
+			cubeMap.flipY = false;
+
+			var loader = new THREE.ImageLoader();
+			loader.load( 'assets/textures/skyboxsun25degtest.png', function ( image ) {
+
+				var getSide = function ( x, y ) {
+
+					var size = 1024;
+
+					var canvas = document.createElement( 'canvas' );
+					canvas.width = size;
+					canvas.height = size;
+
+					var context = canvas.getContext( '2d' );
+					context.drawImage( image, - x * size, - y * size );
+
+					return canvas;
+
+				};
+
+				cubeMap.images[ 0 ] = getSide( 2, 1 ); // px
+				cubeMap.images[ 1 ] = getSide( 0, 1 ); // nx
+				cubeMap.images[ 2 ] = getSide( 1, 0 ); // py
+				cubeMap.images[ 3 ] = getSide( 1, 2 ); // ny
+				cubeMap.images[ 4 ] = getSide( 1, 1 ); // pz
+				cubeMap.images[ 5 ] = getSide( 3, 1 ); // nz
+				cubeMap.needsUpdate = true;
+
+			} );
+
+			var cubeShader = THREE.ShaderLib['cube'];
+			cubeShader.uniforms['tCube'].value = cubeMap;
+
+			var skyBoxMaterial = new THREE.ShaderMaterial( {
+				fragmentShader: cubeShader.fragmentShader,
+				vertexShader: cubeShader.vertexShader,
+				uniforms: cubeShader.uniforms,
+				depthWrite: false,
+				side: THREE.BackSide
+			});
+
+			var skyBox = new THREE.Mesh(
+				new THREE.BoxGeometry( 1000000, 1000000, 1000000 ),
+				skyBoxMaterial
+			);
+			
+			scene.add(skyBox);
+		}
+
+		function updateSinAmp(pt, amp, arr) {
+			if(!(pt[0] < 0 || pt[1] < 0 || pt[0] > 999 || pt[1] > 999 
+				|| amp <= 10 || arr.indexOf(pt) > -1)) {
+				var bufferAttr = waterGeo.getAttribute('position');
+				bufferAttr.needsUpdate = true;
+				for(var i = 0; i < bufferAttr.array.length; i += 3) {
+					if(bufferAttr.array[i] == pt[0] * 100 && bufferAttr.array[i + 1] == pt[1] * 100) {
+						bufferAttr.array[i + 2] = amp;
+					}
+				}
+				arr.push(pt);
+				console.log(amp);
+				delay(10);
+ 				updateSinAmp([pt[0] + 1, pt[1]], amp * .9, arr);
+ 				// updateSinAmp([pt[0], pt[1] + 1], amp * .9, arr);
+ 				// updateSinAmp([pt[0] - 1, pt[1]], amp * .9, arr);
+ 				// updateSinAmp([pt[0], pt[1] - 1], amp * .9, arr);
+			}
+		}
+
+		function animate() {
+
+			requestAnimationFrame( animate );
+			render();
+
+		}
+
+		function render() {
+
+			var time = performance.now() * 0.001;
+			water.material.uniforms.time.value += 1.0 / 60;
+			controls.update();
+			water.render();
+			renderer.render( scene, camera );
+
+		}
+		
+		updateSinAmp([50, 50], 1000, []);
+	</script>
+</body>
+</html>
